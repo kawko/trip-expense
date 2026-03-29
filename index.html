@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกค่าใช้จ่ายทริป</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f0f0f0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            border: none;
+            background: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #e0e0e0;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Sarabun', sans-serif;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+            border-color: #667eea;
+        }
+
+        /* Focus indicator for keyboard navigation */
+        .tab:focus, .btn:focus, .member-actions button:focus, .contribution-item button:focus, .expense-actions button:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .card-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .member-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .member-item {
+            background: white;
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        .member-name {
+            font-weight: 500;
+        }
+
+        .member-actions button {
+            margin-left: 5px;
+            padding: 5px 10px;
+            font-size: 0.75rem;
+        }
+
+        .contribution-list {
+            margin-top: 20px;
+        }
+
+        .contribution-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .expense-list {
+            margin-top: 20px;
+        }
+
+        .expense-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+            align-items: flex-start;
+        }
+
+        .expense-thumb {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid #e0e0e0;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .expense-info {
+            flex: 1;
+        }
+
+        .expense-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .expense-amount {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .expense-date {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .expense-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #667eea;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .summary-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .refund-list {
+            margin-top: 20px;
+        }
+
+        .refund-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .refund-positive {
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .refund-negative {
+            color: #ef4444;
+            font-weight: 700;
+        }
+
+        .total-card {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .total-card .summary-value {
+            color: white;
+        }
+
+        .total-card .summary-label {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .image-upload {
+            border: 2px dashed #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .image-upload:hover {
+            border-color: #667eea;
+            background: #f8f8ff;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+            position: relative;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 80vh;
+            display: block;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f0f0f0;
+        }
+
+        .sync-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .sync-dot.online {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-dot.offline {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 600px) {
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                flex: 1 1 50%;
+                font-size: 0.8rem;
+                padding: 12px 8px;
+            }
+
+            .expense-item {
+                flex-direction: column;
+            }
+
+            .expense-thumb {
+                width: 100%;
+                height: 150px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .member-list {
+                grid-template-columns: 1fr;
+            }
+
+            .refund-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .summary-value {
+                font-size: 1.5rem;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .per-person {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        /* Dashboard Styles */
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .metric-card.negative {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .metric-card-positive {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .metric-card.negative .metric-value {
+            color: #ef4444;
+        }
+
+        .metric-card-positive .metric-value {
+            color: #10b981;
+        }
+
+        .chart-section {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .chart-bar-container {
+            margin-bottom: 12px;
+        }
+
+        .chart-bar-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .chart-bar {
+            height: 24px;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .per-person-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .per-person-header {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr 1.5fr 1fr;
+            padding: 12px 15px;
+            background: #f0f0f0;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .per-person-row {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr 1.5fr 1fr;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+        }
+
+        .per-person-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-equal {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .status-receive {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-pay {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .recent-expenses {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .view-all-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .view-all-link:hover {
+            text-decoration: underline;
+        }
+
+        .fab-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 1.8rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            z-index: 100;
+        }
+
+        .fab-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .fab-btn:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        .trip-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .trip-banner.negative {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .trip-info {
+            flex: 1;
+        }
+
+        .trip-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .trip-date {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .trip-members {
+            text-align: right;
+        }
+
+        .trip-members-count {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .trip-members-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 600px) {
+            .per-person-header, .per-person-row {
+                grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+                font-size: 0.8rem;
+            }
+
+            .per-person-header :nth-child(3),
+            .per-person-row :nth-child(3) {
+                display: none;
+            }
+
+            .trip-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .trip-members {
+                text-align: center;
+            }
+
+            .fab-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 1.5rem;
+                bottom: 16px;
+                right: 16px;
+            }
+        }
+
+        .category-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Sarabun', sans-serif;
+            background: white;
+            cursor: pointer;
+        }
+
+        .category-select:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧾 ระบบบันทึกค่าใช้จ่ายทริป</h1>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab" data-tab="settings">⚙️ ตั้งค่า</button>
+            <button class="tab" data-tab="fund">💰 กองกลาง</button>
+            <button class="tab" data-tab="expenses">📝 รายจ่าย</button>
+            <button class="tab" data-tab="summary">🏠 สรุป</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div class="tab-content active" id="dashboard">
+            <div id="dashboard-status" class="status-message"></div>
+
+            <!-- Trip Banner -->
+            <div class="trip-banner" id="trip-banner">
+                <div class="trip-info">
+                    <div class="trip-name" id="trip-name-display">🎯 ทริปของเรา</div>
+                    <div class="trip-date" id="trip-date-display">ยังไม่ระบุวันที่</div>
+                </div>
+                <div class="trip-members">
+                    <div class="trip-members-count" id="dashboard-members-count">0</div>
+                    <div class="trip-members-label">คน</div>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="metrics-row">
+                <div class="metric-card" id="fund-metric">
+                    <div class="metric-label">💵 กองกลางรวม</div>
+                    <div class="metric-value" id="dashboard-fund">฿0.00</div>
+                </div>
+                <div class="metric-card" id="expenses-metric">
+                    <div class="metric-label">📝 รายจ่ายรวม</div>
+                    <div class="metric-value" id="dashboard-expenses">฿0.00</div>
+                </div>
+                <div class="metric-card metric-card-positive" id="balance-metric">
+                    <div class="metric-label">💰 เงินคงเหลือ</div>
+                    <div class="metric-value" id="dashboard-balance">฿0.00</div>
+                </div>
+            </div>
+
+            <!-- Expense Breakdown Chart -->
+            <div class="chart-section">
+                <div class="section-header">
+                    <span class="chart-title">📊 สัดส่วนรายจ่ายตามหมวดหมู่</span>
+                </div>
+                <div id="chart-container"></div>
+            </div>
+
+            <!-- Per-Person Status Table -->
+            <div class="per-person-table">
+                <div class="per-person-header">
+                    <div>ชื่อ</div>
+                    <div>ออก</div>
+                    <div>ส่วนแบ่ง</div>
+                    <div>ค้าง</div>
+                    <div>สถานะ</div>
+                </div>
+                <div id="per-person-rows"></div>
+            </div>
+
+            <!-- Recent Expenses -->
+            <div class="recent-expenses">
+                <div class="section-header">
+                    <span class="section-title">📝 รายจ่ายล่าสุด</span>
+                    <span class="view-all-link" onclick="switchTab('expenses')">ดูทั้งหมด →</span>
+                </div>
+                <div id="recent-expenses-list"></div>
+            </div>
+
+            <button class="fab-btn" onclick="quickAddExpense()" aria-label="เพิ่มรายจ่าย">＋</button>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-content" id="settings">
+            <div id="settings-status" class="status-message"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🔑 GitHub Settings</span>
+                </div>
+                <div class="form-group">
+                    <label>GitHub Token</label>
+                    <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx">
+                    <small style="color: #ef4444; font-size: 0.8rem;">⚠️ เก็บใน localStorage - แนะนำให้สร้าง Personal Access Token ที่มีสิทธิ์เฉพาะ repo</small>
+                </div>
+                <div class="form-group">
+                    <label>GitHub Username</label>
+                    <input type="text" id="github-username" placeholder="your-username">
+                </div>
+                <div class="form-group">
+                    <label>Repository Name</label>
+                    <input type="text" id="github-repo" placeholder="trip-expenses">
+                </div>
+                <button class="btn btn-primary" onclick="saveSettings()">💾 บันทึกการตั้งค่า</button>
+                <button class="btn btn-success" onclick="syncFromGitHub()">🔄 Sync จาก GitHub</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📅 ตั้งค่าทริป</span>
+                </div>
+                <div class="form-group">
+                    <label>ชื่อทริป</label>
+                    <input type="text" id="trip-name" placeholder="เช่น ทริปชะยากัน 2024" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>วันที่เริ่ม</label>
+                    <input type="date" id="trip-start-date">
+                </div>
+                <div class="form-group">
+                    <label>วันที่สิ้นสุด</label>
+                    <input type="date" id="trip-end-date">
+                </div>
+                <button class="btn btn-primary" onclick="saveTripSettings()">💾 บันทึกการตั้งค่าทริป</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">👥 จัดการสมาชิก</span>
+                </div>
+                <div class="form-group">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="new-member" placeholder="ชื่อสมาชิกใหม่" maxlength="50" style="flex: 1;">
+                        <button class="btn btn-primary" onclick="addMember()">➕ เพิ่ม</button>
+                    </div>
+                </div>
+                <div class="member-list" id="member-list"></div>
+            </div>
+        </div>
+
+        <!-- Fund Tab -->
+        <div class="tab-content" id="fund">
+            <div id="fund-status" class="status-message"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">💵 เพิ่มกองกลาง</span>
+                </div>
+                <div class="form-group">
+                    <label>เลือกสมาชิก</label>
+                    <select id="fund-member"></select>
+                </div>
+                <div class="form-group">
+                    <label>จำนวนเงิน (บาท)</label>
+                    <input type="number" id="fund-amount" placeholder="0.00" min="0" max="9999999" step="0.01">
+                </div>
+                <button class="btn btn-primary" onclick="addContribution()">➕ เพิ่มกองกลาง</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📋 รายการกองกลาง</span>
+                    <span class="card-value" id="total-fund">฿0.00</span>
+                </div>
+                <div class="contribution-list" id="contribution-list"></div>
+            </div>
+
+            <div class="sync-status" id="fund-sync-status">
+                <div class="sync-dot offline" id="fund-sync-dot"></div>
+                <span id="fund-sync-text">ยังไม่ sync</span>
+            </div>
+        </div>
+
+        <!-- Expenses Tab -->
+        <div class="tab-content" id="expenses">
+            <div id="expenses-status" class="status-message"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📝 เพิ่มรายจ่าย</span>
+                </div>
+                <div class="form-group">
+                    <label>ชื่อรายการ</label>
+                    <input type="text" id="expense-name" placeholder="เช่น ค่าอาหาร, ที่พัก, น้ำมัน" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label>จำนวนเงิน (บาท)</label>
+                    <input type="number" id="expense-amount" placeholder="0.00" min="0" max="9999999" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>วันที่</label>
+                    <input type="date" id="expense-date">
+                </div>
+                <div class="form-group">
+                    <label>หมวดหมู่</label>
+                    <select id="expense-category" class="category-select">
+                        <option value="ค่าอาหาร">🍜 ค่าอาหาร</option>
+                        <option value="ที่พัก">🏨 ที่พัก</option>
+                        <option value="น้ำมัน">⛽ น้ำมัน</option>
+                        <option value="ค่าเดินทาง">🚕 ค่าเดินทาง</option>
+                        <option value="ของฝาก">🎁 ของฝาก</option>
+                        <option value="อื่นๆ">📦 อื่นๆ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>แนบรูป (สลิปโอน, ใบเสร็จ, ฯลฯ)</label>
+                    <div class="image-upload" onclick="document.getElementById('expense-image').click()">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">📷</div>
+                        <div>คลิกเพื่ออัปโหลดรูป</div>
+                    </div>
+                    <input type="file" id="expense-image" accept="image/*" style="display: none;" onchange="previewImage(event)">
+                    <img id="image-preview" class="image-preview" alt="ตัวอย่างรูปภาพ" style="display: none;">
+                </div>
+                <button class="btn btn-primary" onclick="addExpense()">➕ เพิ่มรายจ่าย</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📋 รายการรายจ่ายทั้งหมด</span>
+                    <span class="card-value" id="total-expenses">฿0.00</span>
+                </div>
+                <div class="expense-list" id="expense-list"></div>
+            </div>
+
+            <div class="sync-status" id="expenses-sync-status">
+                <div class="sync-dot offline" id="expenses-sync-dot"></div>
+                <span id="expenses-sync-text">ยังไม่ sync</span>
+            </div>
+        </div>
+
+        <!-- Summary Tab -->
+        <div class="tab-content" id="summary">
+            <div id="summary-status" class="status-message"></div>
+
+            <div class="total-card">
+                <div class="summary-value" id="summary-balance">฿0.00</div>
+                <div class="summary-label">💰 เงินคงเหลือ</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div class="summary-card">
+                    <div class="summary-value" id="summary-fund">฿0.00</div>
+                    <div class="summary-label">💵 กองกลางรวม</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value" id="summary-expenses">฿0.00</div>
+                    <div class="summary-label">📝 รายจ่ายรวม</div>
+                    <div class="per-person" id="summary-per-person">คนละ: ฿0.00</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">💸 การคำนวณคืนเงิน</span>
+                </div>
+                <div class="refund-list" id="refund-list"></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="calculateSummary()" style="width: 100%;">🔄 คำนวณใหม่</button>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal" id="image-modal" onclick="closeModal(event)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <img alt="รูปภาพขนาดเต็ม" class="modal-image" id="modal-image">
+        </div>
+    </div>
+
+    <script>
+        // State
+        let appData = {
+            tripName: '🎯 ทริปของเรา',
+            tripStartDate: '',
+            tripEndDate: '',
+            members: [],
+            contributions: [],
+            expenses: []
+        };
+
+        let currentImageBase64 = null;
+        let githubSettings = {
+            token: '',
+            username: '',
+            repo: ''
+        };
+
+        // Utility: Escape HTML to prevent XSS
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Utility: Encode/Decode for Thai text in base64
+        function toBase64(str) {
+            return btoa(String.fromCharCode(...new TextEncoder().encode(str)));
+        }
+
+        function fromBase64(str) {
+            return new TextDecoder().decode(
+                Uint8Array.from(atob(str), c => c.charCodeAt(0))
+            );
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            loadLocalData();
+            loadTripSettings();
+            setupTabs();
+            renderMembers();
+            renderContributions();
+            renderExpenses();
+            renderDashboard();
+            setDefaultDate();
+            calculateSummary();
+            checkSyncStatus();
+        });
+
+        // Tab Navigation
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+        }
+
+        // Settings
+        function loadSettings() {
+            const saved = localStorage.getItem('trip-expense-settings');
+            if (saved) {
+                try {
+                    githubSettings = JSON.parse(saved);
+                    document.getElementById('github-token').value = githubSettings.token || '';
+                    document.getElementById('github-username').value = githubSettings.username || '';
+                    document.getElementById('github-repo').value = githubSettings.repo || '';
+                } catch (e) {
+                    console.error('Failed to parse saved settings', e);
+                }
+            }
+        }
+
+        function loadTripSettings() {
+            document.getElementById('trip-name').value = appData.tripName || '';
+            document.getElementById('trip-start-date').value = appData.tripStartDate || '';
+            document.getElementById('trip-end-date').value = appData.tripEndDate || '';
+        }
+
+        function saveSettings() {
+            githubSettings = {
+                token: document.getElementById('github-token').value.trim(),
+                username: document.getElementById('github-username').value.trim(),
+                repo: document.getElementById('github-repo').value.trim()
+            };
+            localStorage.setItem('trip-expense-settings', JSON.stringify(githubSettings));
+            showStatus('settings', 'บันทึกการตั้งค่าเรียบร้อย', 'success');
+            checkSyncStatus();
+        }
+
+        function loadLocalData() {
+            const saved = localStorage.getItem('trip-expense-data');
+            if (saved) {
+                try {
+                    appData = JSON.parse(saved);
+                    // Ensure backwards compatibility
+                    if (!appData.members) appData.members = [];
+                    if (!appData.contributions) appData.contributions = [];
+                    if (!appData.expenses) appData.expenses = [];
+                    if (!appData.tripName) appData.tripName = '🎯 ทริปของเรา';
+                    if (!appData.tripStartDate) appData.tripStartDate = '';
+                    if (!appData.tripEndDate) appData.tripEndDate = '';
+                } catch (e) {
+                    console.error('Failed to parse saved data', e);
+                    // Keep default appData
+                }
+            }
+        }
+
+        function saveLocalData() {
+            localStorage.setItem('trip-expense-data', JSON.stringify(appData));
+        }
+
+        function saveTripSettings() {
+            const tripName = document.getElementById('trip-name').value.trim();
+            const startDate = document.getElementById('trip-start-date').value;
+            const endDate = document.getElementById('trip-end-date').value;
+
+            // Validate trip name is not empty
+            if (!tripName) {
+                showStatus('settings', 'กรุณาใส่ชื่อทริป', 'error');
+                return;
+            }
+
+            // Validate date range (end date should be after or equal to start date)
+            if (startDate && endDate && endDate < startDate) {
+                showStatus('settings', 'วันที่สิ้นสุดต้องหลังวันที่เริ่มต้น', 'error');
+                return;
+            }
+
+            appData.tripName = tripName || '🎯 ทริปของเรา';
+            appData.tripStartDate = startDate;
+            appData.tripEndDate = endDate;
+            saveLocalData();
+            renderDashboard();
+            saveToGitHub();
+            showStatus('settings', 'บันทึกการตั้งค่าทริปเรียบร้อย', 'success');
+        }
+
+        // GitHub API
+        async function githubRequest(endpoint, method = 'GET', body = null) {
+            const url = `https://api.github.com/repos/${githubSettings.username}/${githubSettings.repo}${endpoint}`;
+
+            const headers = {
+                'Authorization': `token ${githubSettings.token}`,
+                'Content-Type': 'application/json'
+            };
+
+            const options = { method, headers };
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'GitHub API Error');
+                }
+                return response.status === 204 ? null : await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function syncFromGitHub() {
+            if (!githubSettings.token || !githubSettings.username || !githubSettings.repo) {
+                showStatus('settings', 'กรุณากรอกข้อมูล GitHub ให้ครบ', 'error');
+                return;
+            }
+
+            try {
+                showStatus('settings', '<span class="loading"></span>กำลัง sync จาก GitHub...', 'success');
+
+                // Get expenses.json
+                let fileData;
+                try {
+                    fileData = await githubRequest('/contents/expenses.json');
+                    // GitHub API returns base64 with newlines every 60 chars
+                    const content = fromBase64(fileData.content.replace(/\n/g, ''));
+                    appData = JSON.parse(content);
+
+                    // Validate data structure after parsing from GitHub
+                    if (!appData.members) appData.members = [];
+                    if (!appData.contributions) appData.contributions = [];
+                    if (!appData.expenses) appData.expenses = [];
+                    if (!appData.tripName) appData.tripName = '🎯 ทริปของเรา';
+                    if (!appData.tripStartDate) appData.tripStartDate = '';
+                    if (!appData.tripEndDate) appData.tripEndDate = '';
+
+                    saveLocalData();
+                } catch (e) {
+                    if (e.message.includes('Not Found')) {
+                        // File doesn't exist, create it
+                        await createInitialData();
+                    } else {
+                        throw e;
+                    }
+                }
+
+                renderMembers();
+                renderContributions();
+                renderExpenses();
+                renderDashboard();
+                calculateSummary();
+                updateSyncStatus('online', 'Sync เรียบร้อย');
+                showStatus('settings', 'Sync จาก GitHub เรียบร้อย', 'success');
+                loadTripSettings();
+            } catch (error) {
+                console.error('Sync error:', error);
+                showStatus('settings', `Sync ล้มเหลว: ${escapeHtml(error.message)}`, 'error');
+                updateSyncStatus('offline', 'Sync ล้มเหลว');
+            }
+        }
+
+        async function createInitialData() {
+            const content = toBase64(JSON.stringify(appData, null, 2));
+            const message = 'Initialize trip expense data';
+
+            try {
+                await githubRequest('/contents/expenses.json', 'PUT', {
+                    message,
+                    content
+                });
+            } catch (e) {
+                if (e.message.includes('Not Found')) {
+                    // Try to create the repo folder structure
+                    await createImagesFolder();
+                    await githubRequest('/contents/expenses.json', 'PUT', {
+                        message,
+                        content
+                    });
+                } else {
+                    throw e;
+                }
+            }
+        }
+
+        async function createImagesFolder() {
+            try {
+                await githubRequest('/contents/images/.gitkeep', 'PUT', {
+                    message: 'Create images folder',
+                    content: ''
+                });
+            } catch (e) {
+                // Folder might already exist or was created
+                console.log('Images folder note:', e.message);
+            }
+        }
+
+        async function uploadImage(base64Data, filename) {
+            if (!githubSettings.token || !githubSettings.username || !githubSettings.repo) {
+                return null;
+            }
+
+            try {
+                const content = base64Data.split(',')[1] || base64Data;
+                await githubRequest(`/contents/images/${filename}`, 'PUT', {
+                    message: `Upload image ${filename}`,
+                    content
+                });
+                return `images/${filename}`;
+            } catch (error) {
+                console.error('Image upload error:', error);
+                return null;
+            }
+        }
+
+        async function saveToGitHub() {
+            if (!githubSettings.token || !githubSettings.username || !githubSettings.repo) {
+                return;
+            }
+
+            try {
+                const content = toBase64(JSON.stringify(appData, null, 2));
+                let fileData;
+
+                try {
+                    fileData = await githubRequest('/contents/expenses.json');
+                } catch (e) {
+                    // File doesn't exist
+                }
+
+                await githubRequest('/contents/expenses.json', 'PUT', {
+                    message: `Update expenses - ${new Date().toLocaleString('th-TH')}`,
+                    content,
+                    sha: fileData ? fileData.sha : undefined
+                });
+
+                updateSyncStatus('online', 'Sync เรียบร้อย');
+            } catch (error) {
+                console.error('Save to GitHub error:', error);
+                updateSyncStatus('offline', 'Sync ล้มเหลว');
+            }
+        }
+
+        function updateSyncStatus(status, text) {
+            document.querySelectorAll('[id$="-sync-dot"]').forEach(dot => {
+                dot.className = `sync-dot ${status}`;
+            });
+            document.querySelectorAll('[id$="-sync-text"]').forEach(el => {
+                el.textContent = text;
+            });
+        }
+
+        function checkSyncStatus() {
+            if (githubSettings.token && githubSettings.username && githubSettings.repo) {
+                updateSyncStatus('online', 'พร้อม sync');
+            } else {
+                updateSyncStatus('offline', 'ยังไม่ตั้งค่า');
+            }
+        }
+
+        // Members
+        function renderMembers() {
+            const container = document.getElementById('member-list');
+            const select = document.getElementById('fund-member');
+
+            container.innerHTML = '';
+            select.innerHTML = '<option value="">-- เลือกสมาชิก --</option>';
+
+            appData.members.forEach((member, index) => {
+                // List
+                const item = document.createElement('div');
+                item.className = 'member-item';
+                item.dataset.memberIndex = index;
+                item.innerHTML = `
+                    <span class="member-name">${escapeHtml(member)}</span>
+                    <div class="member-actions">
+                        <button class="btn btn-small btn-primary" onclick="editMember(${index})">✏️</button>
+                        <button class="btn btn-small btn-danger" onclick="deleteMember(${index})">🗑️</button>
+                    </div>
+                `;
+                container.appendChild(item);
+
+                // Select option
+                const option = document.createElement('option');
+                option.value = member;
+                option.textContent = member;
+                select.appendChild(option);
+            });
+        }
+
+        function addMember() {
+            const input = document.getElementById('new-member');
+            const name = input.value.trim();
+
+            if (!name) {
+                showStatus('settings', 'กรุณาใส่ชื่อสมาชิก', 'error');
+                return;
+            }
+
+            if (appData.members.includes(name)) {
+                showStatus('settings', 'มีชื่อนี้อยู่แล้ว', 'error');
+                return;
+            }
+
+            appData.members.push(name);
+            saveLocalData();
+            renderMembers();
+            renderDashboard();
+            calculateSummary();
+            input.value = '';
+            showStatus('settings', 'เพิ่มสมาชิกเรียบร้อย', 'success');
+            saveToGitHub();
+        }
+
+        function editMember(index) {
+            const item = document.querySelector(`.member-item[data-member-index="${index}"]`);
+            const nameSpan = item.querySelector('.member-name');
+            const actions = item.querySelector('.member-actions');
+            nameSpan.innerHTML = `<input type="text" id="edit-member-${index}" value="${escapeHtml(appData.members[index])}" maxlength="50" style="padding:4px 8px; border:2px solid #667eea; border-radius:6px; font-size:0.95rem; font-family:inherit; width:100%;">`;
+            actions.innerHTML = `
+                <button class="btn btn-small btn-success" onclick="saveMemberEdit(${index})">✅</button>
+                <button class="btn btn-small btn-danger" onclick="renderMembers()">❌</button>
+            `;
+            const input = document.getElementById(`edit-member-${index}`);
+            input.focus();
+            input.select();
+        }
+
+        function saveMemberEdit(index) {
+            const input = document.getElementById(`edit-member-${index}`);
+            const newName = input.value.trim();
+            if (!newName) {
+                showStatus('settings', 'กรุณาใส่ชื่อสมาชิก', 'error');
+                return;
+            }
+            if (appData.members.includes(newName) && appData.members[index] !== newName) {
+                showStatus('settings', 'มีชื่อนี้อยู่แล้ว', 'error');
+                return;
+            }
+            appData.members[index] = newName;
+            saveLocalData();
+            renderMembers();
+            renderDashboard();
+            calculateSummary();
+            showStatus('settings', 'แก้ไขสมาชิกเรียบร้อย', 'success');
+            saveToGitHub();
+        }
+
+        function deleteMember(index) {
+            if (confirm(`ต้องการลบ "${appData.members[index]}" ใช่ไหม?`)) {
+                appData.members.splice(index, 1);
+                saveLocalData();
+                renderMembers();
+                renderDashboard();
+                calculateSummary();
+                showStatus('settings', 'ลบสมาชิกเรียบร้อย', 'success');
+                saveToGitHub();
+            }
+        }
+
+        // Contributions
+        function renderContributions() {
+            const container = document.getElementById('contribution-list');
+            const totalFundEl = document.getElementById('total-fund');
+            const summaryFundEl = document.getElementById('summary-fund');
+
+            container.innerHTML = '';
+
+            if (appData.contributions.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💵</div><div>ยังไม่มีรายการกองกลาง</div></div>';
+                totalFundEl.textContent = '฿0.00';
+                summaryFundEl.textContent = '฿0.00';
+                return;
+            }
+
+            let total = 0;
+
+            appData.contributions.forEach((c, index) => {
+                total += c.amount;
+                const item = document.createElement('div');
+                item.className = 'contribution-item';
+                item.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600;">${escapeHtml(c.member)}</div>
+                        <div style="font-size: 0.85rem; color: #888;">${escapeHtml(c.date)}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: #667eea;">฿${c.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</div>
+                        <button class="btn btn-small btn-danger" onclick="deleteContribution(${index})">🗑️</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+            totalFundEl.textContent = `฿${total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+            summaryFundEl.textContent = `฿${total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+        }
+
+        function addContribution() {
+            const member = document.getElementById('fund-member').value;
+            const amount = parseFloat(document.getElementById('fund-amount').value);
+
+            if (!member) {
+                showStatus('fund', 'กรุณาเลือกสมาชิก', 'error');
+                return;
+            }
+
+            if (isNaN(amount) || amount <= 0 || amount > 9999999) {
+                showStatus('fund', 'กรุณาใส่จำนวนเงินที่ถูกต้อง', 'error');
+                return;
+            }
+
+            appData.contributions.push({
+                member,
+                amount,
+                date: new Date().toLocaleString('th-TH')
+            });
+
+            saveLocalData();
+            renderContributions();
+            renderDashboard();
+            calculateSummary();
+            document.getElementById('fund-amount').value = '';
+            showStatus('fund', 'เพิ่มกองกลางเรียบร้อย', 'success');
+            saveToGitHub();
+        }
+
+        function deleteContribution(index) {
+            if (confirm('ต้องการลบรายการนี้ใช่ไหม?')) {
+                appData.contributions.splice(index, 1);
+                saveLocalData();
+                renderContributions();
+                renderDashboard();
+                calculateSummary();
+                showStatus('fund', 'ลบรายการเรียบร้อย', 'success');
+                saveToGitHub();
+            }
+        }
+
+        // Expenses
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('expense-date').value = today;
+        }
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Check file size (limit to 2MB to prevent localStorage quota exceeded)
+                const maxSize = 2 * 1024 * 1024; // 2MB
+                if (file.size > maxSize) {
+                    showStatus('expenses', '🚫 รูปภาพใหญ่เกินไป (สูงสุด 2MB)', 'error');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentImageBase64 = e.target.result;
+                    const preview = document.getElementById('image-preview');
+                    preview.src = currentImageBase64;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function renderExpenses() {
+            const container = document.getElementById('expense-list');
+            const totalEl = document.getElementById('total-expenses');
+            const summaryExpensesEl = document.getElementById('summary-expenses');
+
+            container.innerHTML = '';
+
+            if (appData.expenses.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><div>ยังไม่มีรายการรายจ่าย</div></div>';
+                totalEl.textContent = '฿0.00';
+                summaryExpensesEl.textContent = '฿0.00';
+                document.getElementById('summary-per-person').textContent = 'คนละ: ฿0.00';
+                return;
+            }
+
+            let total = 0;
+            const sortedExpenses = [...appData.expenses].reverse();
+
+            sortedExpenses.forEach((expense, originalIndex) => {
+                total += expense.amount;
+                const index = appData.expenses.length - 1 - originalIndex;
+                const item = document.createElement('div');
+                item.className = 'expense-item';
+
+                const escapedImage = escapeHtml(expense.image || '');
+                const imageHtml = expense.image
+                    ? `<img src="${expense.image.startsWith('data:') ? expense.image : `https://raw.githubusercontent.com/${escapeHtml(githubSettings.username)}/${escapeHtml(githubSettings.repo)}/main/${escapedImage}`}" class="expense-thumb" alt="${escapeHtml(expense.name)}" onclick="showImage('${escapedImage.replace(/'/g, "\\'")}')">`
+                    : '<div class="expense-thumb" style="display: flex; align-items: center; justify-content: center; background: #f0f0f0;" aria-label="ไม่มีรูป">📷</div>';
+
+                item.innerHTML = `
+                    ${imageHtml}
+                    <div class="expense-info">
+                        <div class="expense-name">${escapeHtml(expense.name)}</div>
+                        <div class="expense-amount">฿${expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</div>
+                        <div class="expense-date">📅 ${escapeHtml(expense.date)}</div>
+                        <div class="expense-actions">
+                            <button class="btn btn-small btn-danger" onclick="deleteExpense(${index})">🗑️ ลบ</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+            const perPerson = appData.members.length > 0 ? total / appData.members.length : 0;
+            totalEl.textContent = `฿${total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+            summaryExpensesEl.textContent = `฿${total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+            document.getElementById('summary-per-person').textContent = `คนละ: ฿${perPerson.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+        }
+
+        async function addExpense() {
+            const btn = document.querySelector('#expenses .btn-primary');
+
+            // Prevent double submission
+            btn.disabled = true;
+
+            try {
+                const name = document.getElementById('expense-name').value.trim();
+                const amount = parseFloat(document.getElementById('expense-amount').value);
+                const date = document.getElementById('expense-date').value;
+                const category = document.getElementById('expense-category').value;
+
+                if (!name) {
+                    showStatus('expenses', 'กรุณาใส่ชื่อรายการ', 'error');
+                    return;
+                }
+
+                if (isNaN(amount) || amount <= 0 || amount > 9999999) {
+                    showStatus('expenses', 'กรุณาใส่จำนวนเงินที่ถูกต้อง', 'error');
+                    return;
+                }
+
+                if (!date) {
+                    showStatus('expenses', 'กรุณาเลือกวันที่', 'error');
+                    return;
+                }
+
+                let imagePath = null;
+                if (currentImageBase64) {
+                    showStatus('expenses', '<span class="loading"></span>กำลังอัปโหลดรูป...', 'success');
+                    const filename = `img_${Date.now()}.jpg`;
+                    imagePath = await uploadImage(currentImageBase64, filename);
+                }
+
+                appData.expenses.push({
+                    name,
+                    amount,
+                    date,
+                    category,
+                    image: imagePath || currentImageBase64
+                });
+
+                saveLocalData();
+                renderExpenses();
+                renderDashboard();
+                calculateSummary();
+
+                // Reset form
+                document.getElementById('expense-name').value = '';
+                document.getElementById('expense-amount').value = '';
+                document.getElementById('expense-category').value = 'ค่าอาหาร';
+                document.getElementById('expense-image').value = '';
+                document.getElementById('image-preview').style.display = 'none';
+                currentImageBase64 = null;
+                setDefaultDate();
+
+                showStatus('expenses', 'เพิ่มรายจ่ายเรียบร้อย', 'success');
+                saveToGitHub();
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function deleteExpense(index) {
+            if (confirm('ต้องการลบรายการนี้ใช่ไหม?')) {
+                appData.expenses.splice(index, 1);
+                saveLocalData();
+                renderExpenses();
+                renderDashboard();
+                calculateSummary();
+                showStatus('expenses', 'ลบรายการเรียบร้อย', 'success');
+                saveToGitHub();
+            }
+        }
+
+        function showImage(imageSrc) {
+            const modal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+
+            if (imageSrc.startsWith('data:')) {
+                modalImage.src = imageSrc;
+            } else {
+                modalImage.src = `https://raw.githubusercontent.com/${githubSettings.username}/${githubSettings.repo}/main/${imageSrc}`;
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeModal(event) {
+            if (!event || event.target.id === 'image-modal') {
+                document.getElementById('image-modal').classList.remove('active');
+            }
+        }
+
+        // Summary
+        // Helper function to get contributions by member (DRY - extracted from calculateSummary)
+        function getContributionsByMember() {
+            const contributionsByMember = {};
+            appData.contributions.forEach(c => {
+                if (!contributionsByMember[c.member]) {
+                    contributionsByMember[c.member] = 0;
+                }
+                contributionsByMember[c.member] += c.amount;
+            });
+            return contributionsByMember;
+        }
+
+        function calculateSummary() {
+            const totalFund = appData.contributions.reduce((sum, c) => sum + c.amount, 0);
+            const totalExpenses = appData.expenses.reduce((sum, e) => sum + e.amount, 0);
+            const perPerson = appData.members.length > 0 ? totalExpenses / appData.members.length : 0;
+            const balance = totalFund - totalExpenses;
+
+            document.getElementById('summary-balance').textContent = `฿${balance.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+
+            // Calculate per person contribution
+            const contributionsByMember = getContributionsByMember();
+
+            // Calculate refund
+            const container = document.getElementById('refund-list');
+            container.innerHTML = '';
+
+            appData.members.forEach(member => {
+                const contributed = contributionsByMember[member] || 0;
+                const share = perPerson;
+                const refund = contributed - share;
+
+                const item = document.createElement('div');
+                item.className = 'refund-item';
+
+                let refundClass, refundText, sign;
+                if (refund > 0) {
+                    refundClass = 'refund-positive';
+                    refundText = 'ได้รับคืน';
+                    sign = '+';
+                } else if (refund < 0) {
+                    refundClass = 'refund-negative';
+                    refundText = 'ต้องจ่ายเพิ่ม';
+                    sign = '';
+                } else {
+                    refundClass = '';
+                    refundText = 'เท่ากัน';
+                    sign = '';
+                }
+
+                item.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600;">${escapeHtml(member)}</div>
+                        <div style="font-size: 0.85rem; color: #888;">ออก: ฿${contributed.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="${refundClass}">${sign}฿${Math.abs(refund).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</div>
+                        <div style="font-size: 0.8rem; color: #888;">${refundText}</div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+            // Update per person text
+            document.getElementById('summary-per-person').textContent = `คนละ: ฿${perPerson.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+        }
+
+        // Utility
+        function showStatus(tabId, message, type) {
+            const el = document.getElementById(`${tabId}-status`);
+            el.innerHTML = message;
+            el.className = `status-message status-${type}`;
+            el.style.display = 'block';
+
+            setTimeout(() => {
+                el.style.display = 'none';
+            }, 3000);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Dashboard functions
+        function renderDashboard() {
+            const totalFund = appData.contributions.reduce((sum, c) => sum + c.amount, 0);
+            const totalExpenses = appData.expenses.reduce((sum, e) => sum + e.amount, 0);
+            const perPerson = appData.members.length > 0 ? totalExpenses / appData.members.length : 0;
+            const balance = totalFund - totalExpenses;
+
+            // Update trip banner
+            document.getElementById('trip-name-display').textContent = appData.tripName;
+            const dateDisplay = (appData.tripStartDate && appData.tripEndDate)
+                ? `${appData.tripStartDate} - ${appData.tripEndDate}`
+                : (appData.tripStartDate || appData.tripEndDate || 'ยังไม่ระบุวันที่');
+            document.getElementById('trip-date-display').textContent = dateDisplay;
+            document.getElementById('dashboard-members-count').textContent = appData.members.length;
+
+            // Update trip banner color
+            const banner = document.getElementById('trip-banner');
+            if (balance < 0) {
+                banner.classList.add('negative');
+            } else {
+                banner.classList.remove('negative');
+            }
+
+            // Update metrics
+            document.getElementById('dashboard-fund').textContent = `฿${totalFund.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+            document.getElementById('dashboard-expenses').textContent = `฿${totalExpenses.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+            document.getElementById('dashboard-balance').textContent = `฿${balance.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+
+            // Update metric card styles
+            const fundMetric = document.getElementById('fund-metric');
+            const expensesMetric = document.getElementById('expenses-metric');
+            const balanceMetric = document.getElementById('balance-metric');
+
+            fundMetric.classList.remove('negative', 'metric-card-positive');
+            expensesMetric.classList.remove('negative', 'metric-card-positive');
+            balanceMetric.classList.remove('negative', 'metric-card-positive');
+
+            if (balance < 0) {
+                balanceMetric.classList.add('negative');
+            } else {
+                balanceMetric.classList.add('metric-card-positive');
+            }
+
+            // Render category breakdown chart
+            renderChart();
+
+            // Render per-person status table
+            renderPerPersonTable();
+
+            // Render recent expenses
+            renderRecentExpenses();
+        }
+
+        function renderChart() {
+            const container = document.getElementById('chart-container');
+
+            if (appData.expenses.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">ยังไม่มีข้อมูลรายจ่าย</div>';
+                return;
+            }
+
+            // Group expenses by category
+            const categoryTotals = {};
+            appData.expenses.forEach(e => {
+                const category = e.category || 'อื่นๆ';
+                categoryTotals[category] = (categoryTotals[category] || 0) + e.amount;
+            });
+
+            const totalExpenses = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0);
+
+            // Sort by amount
+            const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+
+            const categoryColors = {
+                'ค่าอาหาร': '#f093fb',
+                'ที่พัก': '#4facfe',
+                'น้ำมัน': '#43e97b',
+                'ค่าเดินทาง': '#fa709a',
+                'ของฝาก': '#fee140',
+                'อื่นๆ': '#667eea'
+            };
+
+            let html = '';
+            sortedCategories.forEach(([category, amount]) => {
+                const percentage = totalExpenses > 0 ? (amount / totalExpenses * 100) : 0;
+                const color = categoryColors[category] || '#667eea';
+
+                html += `
+                    <div class="chart-bar-container">
+                        <div class="chart-bar-header">
+                            <span>${escapeHtml(category)}</span>
+                            <span>${percentage.toFixed(1)}%</span>
+                        </div>
+                        <div class="chart-bar" style="width: ${percentage}%; background: ${color};"></div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderPerPersonTable() {
+            const container = document.getElementById('per-person-rows');
+
+            if (appData.members.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">ยังไม่มีสมาชิก</div>';
+                return;
+            }
+
+            const totalExpenses = appData.expenses.reduce((sum, e) => sum + e.amount, 0);
+            const perPerson = totalExpenses / appData.members.length;
+
+            const contributionsByMember = getContributionsByMember();
+
+            // Calculate status for each member
+            const memberStatus = appData.members.map(member => {
+                const contributed = contributionsByMember[member] || 0;
+                const share = perPerson;
+                const balance = contributed - share;
+
+                let statusClass, statusText;
+                if (balance > 0) {
+                    statusClass = 'status-receive';
+                    statusText = `💚 ได้รับคืน ฿${Math.abs(balance).toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+                } else if (balance < 0) {
+                    statusClass = 'status-pay';
+                    statusText = `❤️ ต้องจ่ายเพิ่ม ฿${Math.abs(balance).toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+                } else {
+                    statusClass = 'status-equal';
+                    statusText = '✅ เท่ากัน';
+                }
+
+                return { member, contributed, share, balance, statusClass, statusText };
+            });
+
+            // Sort: members who owe money first
+            memberStatus.sort((a, b) => a.balance - b.balance);
+
+            let html = '';
+            memberStatus.forEach(m => {
+                html += `
+                    <div class="per-person-row">
+                        <div style="font-weight: 500;">${escapeHtml(m.member)}</div>
+                        <div>฿${m.contributed.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</div>
+                        <div>฿${m.share.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</div>
+                        <div style="font-weight: 700; color: ${m.balance >= 0 ? '#10b981' : '#ef4444'};">
+                            ฿${m.balance.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </div>
+                        <div><span class="status-badge ${m.statusClass}">${m.statusText}</span></div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderRecentExpenses() {
+            const container = document.getElementById('recent-expenses-list');
+
+            if (appData.expenses.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">ยังไม่มีรายการรายจ่าย</div>';
+                return;
+            }
+
+            const recentExpenses = [...appData.expenses].reverse().slice(0, 5);
+
+            let html = '';
+            recentExpenses.forEach(e => {
+                const imageHtml = e.image
+                    ? `<img src="${e.image.startsWith('data:') ? e.image : `https://raw.githubusercontent.com/${escapeHtml(githubSettings.username)}/${escapeHtml(githubSettings.repo)}/main/${escapeHtml(e.image)}`}" class="expense-thumb" alt="${escapeHtml(e.name)}" style="width: 50px; height: 50px; border-radius: 8px;">`
+                    : '<div style="width: 50px; height: 50px; border-radius: 8px; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">📷</div>';
+
+                html += `
+                    <div style="display: flex; gap: 12px; padding: 12px; background: white; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
+                        ${imageHtml}
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${escapeHtml(e.name)}</div>
+                            <div style="font-size: 0.9rem; color: #667eea; font-weight: 700;">
+                                ฿${e.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                            </div>
+                            <div style="font-size: 0.8rem; color: #888;">📅 ${escapeHtml(e.date)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function quickAddExpense() {
+            switchTab('expenses');
+            const el = document.getElementById('expense-name');
+            el.closest('.tab-content').addEventListener('animationend', () => {
+                el.focus();
+            }, { once: true });
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+                if (t.dataset.tab === tabName) {
+                    t.classList.add('active');
+                }
+            });
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+        }
+
+</script>
+</body>
+</html>
