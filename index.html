@@ -862,15 +862,22 @@
     <!-- Login Overlay -->
     <div id="login-overlay">
         <div id="login-box">
-            <div style="font-size: 3rem; margin-bottom: 15px;">🔐</div>
+            <div style="font-size: 3rem; margin-bottom: 15px;">🔑</div>
             <h2>ระบบบันทึกค่าใช้จ่ายทริป</h2>
-            <div class="form-group">
-                <input type="password" id="login-password" placeholder="รหัสผ่าน"
-                    style="text-align: center; font-size: 1.1rem;"
-                    onkeydown="if(event.key==='Enter') submitLogin()">
+            <p style="color:#888; font-size:0.9rem; margin-bottom:20px; line-height:1.6;">
+                กรอก GitHub Personal Access Token<br>เพื่อเข้าใช้งาน
+            </p>
+            <div class="form-group" id="login-token-group">
+                <input type="password" id="login-token" placeholder="ghp_xxxxxxxxxxxx"
+                    style="text-align: center; font-size: 1rem; letter-spacing: 1px;"
+                    onkeydown="if(event.key==='Enter') submitTokenLogin()">
             </div>
-            <button class="btn btn-primary" onclick="submitLogin()" style="width: 100%;">เข้าสู่ระบบ</button>
-            <div id="login-error">รหัสผ่านไม่ถูกต้อง</div>
+            <div id="login-loading" style="display:none; color:#667eea; font-size:0.9rem; padding:10px 0; text-align:center;">
+                <span class="loading" style="width:16px; height:16px; border-width:2px; vertical-align:middle;"></span>
+                กำลังตรวจสอบ Token...
+            </div>
+            <button class="btn btn-primary" id="login-btn" onclick="submitTokenLogin()" style="width: 100%;">เข้าสู่ระบบ</button>
+            <div id="login-error" style="display:none;">Token ไม่ถูกต้อง หรือหมดอายุ</div>
         </div>
     </div>
 
@@ -955,21 +962,15 @@
         <div class="tab-content" id="settings">
             <div id="settings-status" class="status-message"></div>
 
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-title">🔑 GitHub Settings</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f0f0; border-radius:12px; padding:12px 16px; margin-bottom:15px; gap:10px; flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:0.78rem; color:#888; margin-bottom:2px;">เชื่อมต่อกับ</div>
+                    <div id="config-repo-info" style="font-size:0.9rem; color:#333; font-family:monospace; font-weight:600;">กำลังโหลด...</div>
                 </div>
-                <div class="form-group">
-                    <label>GitHub Token</label>
-                    <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx">
-                    <small style="display:block; margin-top:6px; color: #ef4444; font-size: 0.8rem;">⚠️ เก็บใน localStorage - แนะนำให้สร้าง Personal Access Token ที่มีสิทธิ์เฉพาะ repo</small>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn btn-success btn-small" onclick="syncFromGitHub()">🔄 Sync</button>
+                    <button class="btn btn-danger btn-small" onclick="logout()">🚪 ออกจากระบบ</button>
                 </div>
-                <div class="form-group">
-                    <label style="color:#888; font-size:0.9rem;">เชื่อมต่อกับ Repository</label>
-                    <div id="config-repo-info" style="padding:10px 14px; background:#f0f0f0; border-radius:8px; font-size:0.9rem; color:#555; font-family:monospace;">กำลังโหลด...</div>
-                </div>
-                <button class="btn btn-primary" onclick="saveSettings()">💾 บันทึก Token</button>
-                <button class="btn btn-success" onclick="syncFromGitHub()">🔄 Sync จาก GitHub</button>
             </div>
 
             <div class="card">
@@ -1189,13 +1190,28 @@
                 console.error('Failed to load config.json:', e);
             }
 
-            if (localStorage.getItem('trip-expense-auth') !== 'true') {
+            const savedToken = localStorage.getItem('trip-expense-token');
+            if (savedToken) {
                 document.getElementById('login-overlay').style.display = 'flex';
-                document.getElementById('login-password').focus();
-                return;
+                setLoginLoading(true);
+                const valid = await verifyToken(savedToken);
+                setLoginLoading(false);
+                if (valid) {
+                    githubSettings.token = savedToken;
+                    document.getElementById('login-overlay').style.display = 'none';
+                    startApp();
+                    return;
+                }
+                // Token expired or revoked
+                localStorage.removeItem('trip-expense-token');
+                const errorEl = document.getElementById('login-error');
+                errorEl.textContent = 'Token หมดอายุ กรุณากรอกใหม่';
+                errorEl.style.display = 'block';
+                document.getElementById('login-token').focus();
+            } else {
+                document.getElementById('login-overlay').style.display = 'flex';
+                document.getElementById('login-token').focus();
             }
-
-            startApp();
         }
 
         function startApp() {
@@ -1203,7 +1219,6 @@
             if (infoEl && appConfig) {
                 infoEl.textContent = `${appConfig.github_username}/${appConfig.github_repo}`;
             }
-            loadSettings();
             loadLocalData();
             loadTripSettings();
             setupTabs();
@@ -1216,24 +1231,57 @@
             checkSyncStatus();
         }
 
-        function submitLogin() {
-            const password = document.getElementById('login-password').value;
+        async function verifyToken(token) {
+            try {
+                const res = await fetch('https://api.github.com/user', {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                return res.ok;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function submitTokenLogin() {
+            const token = document.getElementById('login-token').value.trim();
             const errorEl = document.getElementById('login-error');
-            if (!appConfig) {
-                errorEl.textContent = 'ไม่สามารถโหลด config.json ได้';
+            errorEl.style.display = 'none';
+
+            if (!token) {
+                errorEl.textContent = 'กรุณากรอก Token';
                 errorEl.style.display = 'block';
                 return;
             }
-            if (password === appConfig.app_password) {
-                localStorage.setItem('trip-expense-auth', 'true');
+
+            setLoginLoading(true);
+            const valid = await verifyToken(token);
+            setLoginLoading(false);
+
+            if (valid) {
+                githubSettings.token = token;
+                localStorage.setItem('trip-expense-token', token);
                 document.getElementById('login-overlay').style.display = 'none';
                 startApp();
             } else {
-                errorEl.textContent = 'รหัสผ่านไม่ถูกต้อง';
+                errorEl.textContent = 'Token ไม่ถูกต้อง หรือหมดอายุ';
                 errorEl.style.display = 'block';
-                document.getElementById('login-password').value = '';
-                document.getElementById('login-password').focus();
+                document.getElementById('login-token').value = '';
+                document.getElementById('login-token').focus();
             }
+        }
+
+        function setLoginLoading(loading) {
+            document.getElementById('login-btn').disabled = loading;
+            document.getElementById('login-loading').style.display = loading ? 'block' : 'none';
+            document.getElementById('login-token-group').style.display = loading ? 'none' : 'block';
+        }
+
+        function logout() {
+            localStorage.removeItem('trip-expense-token');
+            document.getElementById('login-token').value = '';
+            document.getElementById('login-error').style.display = 'none';
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('login-token').focus();
         }
 
         // Tab Navigation
@@ -1249,30 +1297,10 @@
         }
 
         // Settings
-        function loadSettings() {
-            const saved = localStorage.getItem('trip-expense-settings');
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    githubSettings.token = parsed.token || '';
-                    document.getElementById('github-token').value = githubSettings.token;
-                } catch (e) {
-                    console.error('Failed to parse saved settings', e);
-                }
-            }
-        }
-
         function loadTripSettings() {
             document.getElementById('trip-name').value = appData.tripName || '';
             document.getElementById('trip-start-date').value = appData.tripStartDate || '';
             document.getElementById('trip-end-date').value = appData.tripEndDate || '';
-        }
-
-        function saveSettings() {
-            githubSettings.token = document.getElementById('github-token').value.trim();
-            localStorage.setItem('trip-expense-settings', JSON.stringify({ token: githubSettings.token }));
-            showStatus('settings', 'บันทึกการตั้งค่าเรียบร้อย', 'success');
-            checkSyncStatus();
         }
 
         function loadLocalData() {
