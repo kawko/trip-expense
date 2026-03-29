@@ -819,9 +819,61 @@
             outline-offset: 2px;
             border-color: #667eea;
         }
+
+        /* Login Overlay */
+        #login-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        #login-box {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        #login-box h2 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        #login-error {
+            color: #ef4444;
+            font-size: 0.9rem;
+            margin-top: 12px;
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <!-- Login Overlay -->
+    <div id="login-overlay">
+        <div id="login-box">
+            <div style="font-size: 3rem; margin-bottom: 15px;">🔐</div>
+            <h2>ระบบบันทึกค่าใช้จ่ายทริป</h2>
+            <div class="form-group">
+                <input type="password" id="login-password" placeholder="รหัสผ่าน"
+                    style="text-align: center; font-size: 1.1rem;"
+                    onkeydown="if(event.key==='Enter') submitLogin()">
+            </div>
+            <button class="btn btn-primary" onclick="submitLogin()" style="width: 100%;">เข้าสู่ระบบ</button>
+            <div id="login-error">รหัสผ่านไม่ถูกต้อง</div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>🧾 ระบบบันทึกค่าใช้จ่ายทริป</h1>
@@ -910,17 +962,13 @@
                 <div class="form-group">
                     <label>GitHub Token</label>
                     <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx">
-                    <small style="color: #ef4444; font-size: 0.8rem;">⚠️ เก็บใน localStorage - แนะนำให้สร้าง Personal Access Token ที่มีสิทธิ์เฉพาะ repo</small>
+                    <small style="display:block; margin-top:6px; color: #ef4444; font-size: 0.8rem;">⚠️ เก็บใน localStorage - แนะนำให้สร้าง Personal Access Token ที่มีสิทธิ์เฉพาะ repo</small>
                 </div>
                 <div class="form-group">
-                    <label>GitHub Username</label>
-                    <input type="text" id="github-username" placeholder="your-username">
+                    <label style="color:#888; font-size:0.9rem;">เชื่อมต่อกับ Repository</label>
+                    <div id="config-repo-info" style="padding:10px 14px; background:#f0f0f0; border-radius:8px; font-size:0.9rem; color:#555; font-family:monospace;">กำลังโหลด...</div>
                 </div>
-                <div class="form-group">
-                    <label>Repository Name</label>
-                    <input type="text" id="github-repo" placeholder="trip-expenses">
-                </div>
-                <button class="btn btn-primary" onclick="saveSettings()">💾 บันทึกการตั้งค่า</button>
+                <button class="btn btn-primary" onclick="saveSettings()">💾 บันทึก Token</button>
                 <button class="btn btn-success" onclick="syncFromGitHub()">🔄 Sync จาก GitHub</button>
             </div>
 
@@ -999,8 +1047,20 @@
                     <span class="card-title">📝 เพิ่มรายจ่าย</span>
                 </div>
                 <div class="form-group">
+                    <label>หมวดหมู่</label>
+                    <select id="expense-category" class="category-select" onchange="onCategoryChange()">
+                        <option value="อาหาร+เครื่องดื่ม">🍜 อาหาร+เครื่องดื่ม</option>
+                        <option value="คาเฟ่">☕ คาเฟ่</option>
+                        <option value="อาหาร">🍛 อาหาร</option>
+                        <option value="เครื่องดื่ม">🧃 เครื่องดื่ม</option>
+                        <option value="แอลกอฮอล์">🍺 แอลกอฮอล์</option>
+                        <option value="เครื่องดื่ม+แอลกอฮอล์">🍹 เครื่องดื่ม+แอลกอฮอล์</option>
+                        <option value="อื่นๆ">📦 อื่นๆ</option>
+                    </select>
+                </div>
+                <div class="form-group" id="expense-name-group" style="display:none;">
                     <label>ชื่อรายการ</label>
-                    <input type="text" id="expense-name" placeholder="เช่น ค่าอาหาร, ที่พัก, น้ำมัน" maxlength="100">
+                    <input type="text" id="expense-name" placeholder="เช่น ค่าอาหาร, น้ำแข็ง, ขนม" maxlength="100">
                 </div>
                 <div class="form-group">
                     <label>จำนวนเงิน (บาท)</label>
@@ -1009,17 +1069,6 @@
                 <div class="form-group">
                     <label>วันที่</label>
                     <input type="date" id="expense-date">
-                </div>
-                <div class="form-group">
-                    <label>หมวดหมู่</label>
-                    <select id="expense-category" class="category-select">
-                        <option value="ค่าอาหาร">🍜 ค่าอาหาร</option>
-                        <option value="ที่พัก">🏨 ที่พัก</option>
-                        <option value="น้ำมัน">⛽ น้ำมัน</option>
-                        <option value="ค่าเดินทาง">🚕 ค่าเดินทาง</option>
-                        <option value="ของฝาก">🎁 ของฝาก</option>
-                        <option value="อื่นๆ">📦 อื่นๆ</option>
-                    </select>
                 </div>
                 <div class="form-group">
                     <label>แนบรูป (สลิปโอน, ใบเสร็จ, ฯลฯ)</label>
@@ -1099,6 +1148,7 @@
         };
 
         let currentImageBase64 = null;
+        let appConfig = null;
         let githubSettings = {
             token: '',
             username: '',
@@ -1126,6 +1176,33 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+        });
+
+        async function initApp() {
+            try {
+                const res = await fetch('config.json');
+                appConfig = await res.json();
+                githubSettings.username = appConfig.github_username;
+                githubSettings.repo = appConfig.github_repo;
+            } catch (e) {
+                console.error('Failed to load config.json:', e);
+            }
+
+            if (localStorage.getItem('trip-expense-auth') !== 'true') {
+                document.getElementById('login-overlay').style.display = 'flex';
+                document.getElementById('login-password').focus();
+                return;
+            }
+
+            startApp();
+        }
+
+        function startApp() {
+            const infoEl = document.getElementById('config-repo-info');
+            if (infoEl && appConfig) {
+                infoEl.textContent = `${appConfig.github_username}/${appConfig.github_repo}`;
+            }
             loadSettings();
             loadLocalData();
             loadTripSettings();
@@ -1137,7 +1214,27 @@
             setDefaultDate();
             calculateSummary();
             checkSyncStatus();
-        });
+        }
+
+        function submitLogin() {
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+            if (!appConfig) {
+                errorEl.textContent = 'ไม่สามารถโหลด config.json ได้';
+                errorEl.style.display = 'block';
+                return;
+            }
+            if (password === appConfig.app_password) {
+                localStorage.setItem('trip-expense-auth', 'true');
+                document.getElementById('login-overlay').style.display = 'none';
+                startApp();
+            } else {
+                errorEl.textContent = 'รหัสผ่านไม่ถูกต้อง';
+                errorEl.style.display = 'block';
+                document.getElementById('login-password').value = '';
+                document.getElementById('login-password').focus();
+            }
+        }
 
         // Tab Navigation
         function setupTabs() {
@@ -1156,10 +1253,9 @@
             const saved = localStorage.getItem('trip-expense-settings');
             if (saved) {
                 try {
-                    githubSettings = JSON.parse(saved);
-                    document.getElementById('github-token').value = githubSettings.token || '';
-                    document.getElementById('github-username').value = githubSettings.username || '';
-                    document.getElementById('github-repo').value = githubSettings.repo || '';
+                    const parsed = JSON.parse(saved);
+                    githubSettings.token = parsed.token || '';
+                    document.getElementById('github-token').value = githubSettings.token;
                 } catch (e) {
                     console.error('Failed to parse saved settings', e);
                 }
@@ -1173,12 +1269,8 @@
         }
 
         function saveSettings() {
-            githubSettings = {
-                token: document.getElementById('github-token').value.trim(),
-                username: document.getElementById('github-username').value.trim(),
-                repo: document.getElementById('github-repo').value.trim()
-            };
-            localStorage.setItem('trip-expense-settings', JSON.stringify(githubSettings));
+            githubSettings.token = document.getElementById('github-token').value.trim();
+            localStorage.setItem('trip-expense-settings', JSON.stringify({ token: githubSettings.token }));
             showStatus('settings', 'บันทึกการตั้งค่าเรียบร้อย', 'success');
             checkSyncStatus();
         }
@@ -1661,6 +1753,18 @@
             document.getElementById('summary-per-person').textContent = `คนละ: ฿${perPerson.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
         }
 
+        function onCategoryChange() {
+            const category = document.getElementById('expense-category').value;
+            const nameGroup = document.getElementById('expense-name-group');
+            if (category === 'อื่นๆ') {
+                nameGroup.style.display = 'block';
+                document.getElementById('expense-name').focus();
+            } else {
+                nameGroup.style.display = 'none';
+                document.getElementById('expense-name').value = '';
+            }
+        }
+
         async function addExpense() {
             const btn = document.querySelector('#expenses .btn-primary');
 
@@ -1668,13 +1772,14 @@
             btn.disabled = true;
 
             try {
-                const name = document.getElementById('expense-name').value.trim();
+                const category = document.getElementById('expense-category').value;
+                const rawName = document.getElementById('expense-name').value.trim();
+                const name = category === 'อื่นๆ' ? rawName : category;
                 const amount = parseFloat(document.getElementById('expense-amount').value);
                 const date = document.getElementById('expense-date').value;
-                const category = document.getElementById('expense-category').value;
 
-                if (!name) {
-                    showStatus('expenses', 'กรุณาใส่ชื่อรายการ', 'error');
+                if (category === 'อื่นๆ' && !rawName) {
+                    showStatus('expenses', 'กรุณาระบุชื่อรายการ', 'error');
                     return;
                 }
 
@@ -1711,7 +1816,8 @@
                 // Reset form
                 document.getElementById('expense-name').value = '';
                 document.getElementById('expense-amount').value = '';
-                document.getElementById('expense-category').value = 'ค่าอาหาร';
+                document.getElementById('expense-category').value = 'อาหาร+เครื่องดื่ม';
+                onCategoryChange();
                 document.getElementById('expense-image').value = '';
                 document.getElementById('image-preview').style.display = 'none';
                 currentImageBase64 = null;
@@ -1916,11 +2022,12 @@
             const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
 
             const categoryColors = {
-                'ค่าอาหาร': '#f093fb',
-                'ที่พัก': '#4facfe',
-                'น้ำมัน': '#43e97b',
-                'ค่าเดินทาง': '#fa709a',
-                'ของฝาก': '#fee140',
+                'อาหาร+เครื่องดื่ม': '#f093fb',
+                'คาเฟ่': '#4facfe',
+                'อาหาร': '#43e97b',
+                'เครื่องดื่ม': '#fa709a',
+                'แอลกอฮอล์': '#fee140',
+                'เครื่องดื่ม+แอลกอฮอล์': '#a855f7',
                 'อื่นๆ': '#667eea'
             };
 
